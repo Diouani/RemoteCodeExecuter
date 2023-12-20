@@ -5,10 +5,10 @@ FROM openjdk:11
 WORKDIR /usr/src/app
 
 # Copy the local Java file into the container at the specified directory
-COPY /home/zyliao/IdeaProjects/RemoteExecution/src/main/resources/static/input.java .
+COPY /src/main/resources/static/Input.java .
 
 # Compile the Java file
-RUN javac input.java
+RUN javac Input.java
 
 # Redirect the output to a file
-CMD ["java", "input", ">", "output.txt"]
+CMD ["java", "Input", ">", "output.txt"]

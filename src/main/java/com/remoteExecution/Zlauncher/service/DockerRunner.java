@@ -8,6 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 @Component
 public class DockerRunner {
     @Value("${fichier.chemin}")
@@ -20,35 +23,41 @@ public class DockerRunner {
     public String executeCode(){
 
         String javaCodeSnippet =
-                "public class Main {\n" +
+                "public class Input {\n" +
                         "    public static void main(String[] args) {\n" +
                         "        String longText = \"ThisIsALongText12345because i want it to be like this + \";\n" +
                         "        System.out.println(\"Long Text: \" + longText);\n" +
                         "    }\n" +
                         "}";
-System.out.println(cheminDuFichier);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("/home/zyliao/IdeaProjects/RemoteExecution/src/main/resources/static/input.java"))) {
+System.out.println(System.getProperty("user.dir"));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(System.getProperty("user.dir") + "/src/main/resources/static/Input.java"))) {
             writer.write(javaCodeSnippet);
         } catch (IOException e) {
             e.printStackTrace();
         }
         try {
             // Build the Docker image
-            executeCommand("docker build -t your-java-app -f /home/zyliao/IdeaProjects/RemoteExecution/src/main/resources/static/Dockerfile .");
+            executeCommand("docker build --no-cache -t your-java-app -f " +System.getProperty("user.dir")  +"\\src\\Dockerfile .");
 
-            // Run the Docker container
-            executeCommand("docker run --name your-container your-java-app");
+            // Generate a unique container name based on the current timestamp
+            String containerName = "your-container-" + getCurrentTimestamp();
+
+
+            // Run the Docker container with the unique name
+            executeCommand("docker run --name " + containerName + " your-java-app");
+
 
             // Copy the output.txt file from the container to the local machine
-            executeCommand("docker cp your-container:/usr/src/app/output.txt .");
+            executeCommand("docker cp " + containerName + ":/usr/src/app/output.txt .");
 
             // Read and print the content of the output.txt file
             String output = readFromFile("output.txt");
             System.out.println("Output from the Docker container:\n" + output);
 
             // Cleanup: Remove the container and image
-            executeCommand("docker rm your-container");
-            executeCommand("docker rmi your-java-app");
+            executeCommand("docker rm -f " + containerName);
+            executeCommand("docker rmi -f your-java-app");
+
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -82,6 +91,10 @@ System.out.println(cheminDuFichier);
     }
 
 
+    private String getCurrentTimestamp() {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+                return dateFormat.format(new Date());
+            }
 
 
     }
